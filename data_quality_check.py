@@ -31,3 +31,12 @@ for file in os.listdir(folder):
         # Data Types
         print("\nData Types:")
         print(df.dtypes)
+
+        import pandas as pd
+
+df = pd.read_csv("data/raw/hdfc_top100_nav.csv")
+
+print(df.isnull().sum())
+
+print(df.duplicated().sum())
+print(df.dtypes)
