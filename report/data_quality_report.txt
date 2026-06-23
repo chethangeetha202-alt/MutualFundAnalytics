@@ -1,0 +1,20 @@
+DATA QUALITY REPORT
+
+Dataset: hdfc_top100_nav.csv
+
+Shape:
+3106 Rows
+2 Columns
+
+Missing Values:
+None
+
+Duplicate Records:
+0
+
+Data Types:
+date -> object
+nav -> float64
+
+Conclusion:
+Dataset is clean and suitable for analysis.
