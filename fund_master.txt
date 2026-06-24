@@ -1,2 +1,0 @@
-Fund Master Exploration:
-The internship task refers to a fund_master dataset. However, no fund_master.csv file was provided in the available datasets. Therefore, fund house, category, sub-category, risk grade exploration and AMFI code validation could not be performed during Day 1.

@@ -1,6 +1,15 @@
 import pandas as pd
 
-df = pd.read_csv("data/raw/fund_master.csv")
+df = pd.read_csv("data/raw/01_fund_master.csv")
 
-print("Columns in dataset:")
-print(df.columns)
+print("Fund Houses:")
+print(df["fund_house"].unique())
+
+print("\nCategories:")
+print(df["category"].unique())
+
+print("\nSub Categories:")
+print(df["sub_category"].unique())
+
+print("\nRisk Categories:")
+print(df["risk_category"].unique())

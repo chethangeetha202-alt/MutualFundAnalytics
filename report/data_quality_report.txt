@@ -18,3 +18,27 @@ nav -> float64
 
 Conclusion:
 Dataset is clean and suitable for analysis.
+
+
+
+DATA QUALITY SUMMARY
+
+1. Dataset loaded successfully.
+
+2. Fund Master Dataset
+- Contains scheme details, categories and AMFI codes.
+- No major structural issues found.
+
+3. NAV History Dataset
+- Contains historical NAV values.
+- Date and NAV columns available.
+
+4. AMFI Code Validation
+- All AMFI codes in fund_master were found in nav_history.
+- No missing scheme codes detected.
+
+5. Missing Values
+- No critical missing values found.
+
+6. Conclusion
+- Dataset quality is good and ready for analysis.
