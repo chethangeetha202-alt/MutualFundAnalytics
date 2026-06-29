@@ -1,0 +1,7 @@
+To build and export the Power BI dashboard:
+1. Open Power BI Desktop.
+2. Import the cleaned CSV files from the data/processed folder.
+3. Create the relationships described in data_model.md.
+4. Add the four report pages and visuals from report_plan.json.
+5. Publish or save as bluestock_mf_dashboard.pbix.
+6. Export the report to PDF and capture one PNG per page.
