@@ -20,7 +20,9 @@
         "sharpe_ratio",
         "sortino_ratio",
         "std_dev_ann_pct",
-        "max_drawdown_pct"
+        "max_drawdown_pct",
+        "morningstar_rating",
+        "risk_grade"
       ]
     },
     {
@@ -50,6 +52,93 @@
         "payment_mode",
         "kyc_status"
       ]
+    },
+    {
+      "name": "FundScorecard",
+      "source": "fund_scorecard.csv",
+      "columns": [
+        "amfi_code",
+        "scheme_name",
+        "fund_house",
+        "category",
+        "plan",
+        "expense_ratio_pct",
+        "return_1yr_pct",
+        "return_3yr_pct",
+        "return_5yr_pct",
+        "cagr_1yr",
+        "cagr_3yr",
+        "cagr_5yr",
+        "sharpe_ratio",
+        "alpha",
+        "beta",
+        "max_drawdown",
+        "tracking_error_nifty100",
+        "fund_score"
+      ]
+    },
+    {
+      "name": "FundRiskProfile",
+      "source": "fund_risk_profile.csv",
+      "columns": [
+        "amfi_code",
+        "var_95_pct",
+        "cvar_95_pct",
+        "var_99_pct",
+        "cvar_99_pct",
+        "rolling_sharpe_90d"
+      ]
+    },
+    {
+      "name": "FundRecommendations",
+      "source": "fund_recommendations.csv",
+      "columns": [
+        "risk_profile",
+        "amfi_code",
+        "scheme_name",
+        "fund_house",
+        "category",
+        "plan",
+        "fund_score",
+        "sharpe_ratio",
+        "max_drawdown",
+        "beta",
+        "alpha"
+      ]
+    },
+    {
+      "name": "SectorConcentration",
+      "source": "sector_concentration.csv",
+      "columns": [
+        "amfi_code",
+        "sector_hhi",
+        "top_sector",
+        "top_sector_share_pct",
+        "top_3_sector_share_pct",
+        "number_of_sectors"
+      ]
+    },
+    {
+      "name": "SIPCohortRetention",
+      "source": "sip_cohort_retention.csv",
+      "columns": [
+        "first_month",
+        "month",
+        "active_investors",
+        "cohort_size",
+        "months_since_cohort",
+        "retention_rate"
+      ]
+    },
+    {
+      "name": "SIPContinuity",
+      "source": "sip_continuity.csv",
+      "columns": [
+        "month",
+        "active_investors",
+        "continuity_3m_rate",
+        "continuity_6m_rate"
+      ]
     }
   ],
   "relationships": [
@@ -64,6 +153,18 @@
     {
       "from": "FundNAV.date",
       "to": "InvestorTransactions.transaction_date"
+    },
+    {
+      "from": "FundPerformance.amfi_code",
+      "to": "FundScorecard.amfi_code"
+    },
+    {
+      "from": "FundPerformance.amfi_code",
+      "to": "FundRiskProfile.amfi_code"
+    },
+    {
+      "from": "FundPerformance.amfi_code",
+      "to": "SectorConcentration.amfi_code"
     }
   ]
 }

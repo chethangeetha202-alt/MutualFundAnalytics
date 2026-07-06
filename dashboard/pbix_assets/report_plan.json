@@ -15,6 +15,8 @@
         "Scatter plot: return vs risk/StdDev",
         "Sortable fund scorecard table",
         "NAV line vs benchmark",
+        "Risk metrics panel: Sharpe, alpha, beta, VaR/CVaR",
+        "Sector concentration bar chart",
         "Slicers: fund house, category, plan"
       ]
     },
@@ -33,7 +35,17 @@
       "visuals": [
         "Dual-axis chart: SIP inflow vs Nifty 50",
         "Category inflow heatmap",
-        "Top 5 categories by net inflow FY25"
+        "Top 5 categories by net inflow FY25",
+        "SIP continuity line: 3-month and 6-month retention"
+      ]
+    },
+    {
+      "name": "Risk & Recommendations",
+      "visuals": [
+        "KPI cards: fund risk profile counts and concentration",
+        "Table: recommended funds by risk profile",
+        "Bar chart: top 10 funds by sector HHI",
+        "Line chart: rolling 90-day Sharpe for selected funds"
       ]
     }
   ],

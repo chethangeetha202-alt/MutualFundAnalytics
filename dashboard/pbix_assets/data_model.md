@@ -15,9 +15,74 @@ Tables to import from CSV files:
   - return_1yr_pct
   - return_3yr_pct
   - return_5yr_pct
-  - expense_ratio_pct
-  - aum_crore
   - benchmark_3yr_pct
+  - alpha
+  - beta
+  - sharpe_ratio
+  - sortino_ratio
+  - std_dev_ann_pct
+  - max_drawdown_pct
+  - aum_crore
+  - expense_ratio_pct
+  - morningstar_rating
+  - risk_grade
+- fund_scorecard.csv
+  - amfi_code
+  - scheme_name
+  - fund_house
+  - category
+  - plan
+  - expense_ratio_pct
+  - return_1yr_pct
+  - return_3yr_pct
+  - return_5yr_pct
+  - cagr_1yr
+  - cagr_3yr
+  - cagr_5yr
+  - sharpe_ratio
+  - alpha
+  - beta
+  - max_drawdown
+  - tracking_error_nifty100
+  - fund_score
+- fund_risk_profile.csv
+  - amfi_code
+  - var_95_pct
+  - cvar_95_pct
+  - var_99_pct
+  - cvar_99_pct
+  - rolling_sharpe_90d
+- fund_recommendations.csv
+  - risk_profile
+  - amfi_code
+  - scheme_name
+  - fund_house
+  - category
+  - plan
+  - fund_score
+  - sharpe_ratio
+  - max_drawdown
+  - beta
+  - alpha
+- sector_concentration.csv
+  - amfi_code
+  - sector_hhi
+  - top_sector
+  - top_sector_share_pct
+  - top_3_sector_share_pct
+  - number_of_sectors
+- sip_cohort_retention.csv
+  - first_month
+  - month
+  - active_investors
+  - cohort_size
+  - months_since_cohort
+  - retention_rate
+- sip_continuity.csv
+  - month
+  - active_investors
+  - continuity_3m_rate
+  - continuity_6m_rate
 - investor_transactions_clean.csv
   - investor_id
   - transaction_date
@@ -36,5 +101,8 @@ Tables to import from CSV files:
 Relationships:
 
 - nav_history_clean.amfi_code -> scheme_performance_clean.amfi_code
-- nav_history_clean.date -> transaction_date (for time-based visuals)
 - investor_transactions_clean.amfi_code -> scheme_performance_clean.amfi_code
+- nav_history_clean.date -> investor_transactions_clean.transaction_date
+- scheme_performance_clean.amfi_code -> fund_scorecard.amfi_code
+- scheme_performance_clean.amfi_code -> fund_risk_profile.amfi_code
+- scheme_performance_clean.amfi_code -> sector_concentration.amfi_code

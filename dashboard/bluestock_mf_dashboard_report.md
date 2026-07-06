@@ -14,8 +14,15 @@ This report package contains the structure and data model needed to build the Po
 - data/processed/nav_history_clean.csv
 - data/processed/scheme_performance_clean.csv
 - data/processed/investor_transactions_clean.csv
+- fund_scorecard.csv
+- fund_risk_profile.csv
+- fund_recommendations.csv
+- sector_concentration.csv
+- sip_cohort_retention.csv
+- sip_continuity.csv
 
 ## Notes
 
-- The report is organized into 4 pages: Industry Overview, Fund Performance, Investor Analytics, and SIP & Market Trends.
+- The report is organized into 5 pages: Industry Overview, Fund Performance, Investor Analytics, SIP & Market Trends, and Risk & Recommendations.
 - The deliverables are ready to be opened in Power BI Desktop and saved as a PBIX file.
+- Manual export is required for `.pbix`, PDF, and page PNGs because headless Power BI export is not supported in this environment.

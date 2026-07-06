@@ -157,6 +157,212 @@ scorecard = scorecard.sort_values("fund_score", ascending=False).reset_index(dro
 alpha_beta = scorecard[["amfi_code", "scheme_name", "alpha", "beta", "tracking_error_nifty100"]].copy()
 alpha_beta = alpha_beta.sort_values("alpha", ascending=False).reset_index(drop=True)
 
+# Advanced risk analytics: VaR, CVaR, rolling Sharpe
+
+def compute_var_cvar(returns, confidence=0.95):
+    if len(returns) == 0:
+        return np.nan, np.nan
+    sorted_returns = np.sort(returns.dropna().values)
+    alpha = 1 - confidence
+    idx = int(np.floor(alpha * len(sorted_returns)))
+    idx = max(0, min(idx, len(sorted_returns) - 1))
+    var_value = sorted_returns[idx]
+    cvar_value = sorted_returns[sorted_returns <= var_value].mean() if (sorted_returns <= var_value).any() else var_value
+    return var_value * 100, cvar_value * 100
+
+risk_var_rows = []
+rolling_sharpe_map = {}
+for amfi_code in fund_daily_returns.columns:
+    returns = fund_daily_returns[amfi_code].dropna()
+    var_95, cvar_95 = compute_var_cvar(returns, confidence=0.95)
+    var_99, cvar_99 = compute_var_cvar(returns, confidence=0.99)
+    rolling_sharpe = (
+        (returns.rolling(90).mean() - rf_daily)
+        / returns.rolling(90).std(ddof=0)
+        * np.sqrt(252)
+    )
+    rolling_sharpe_map[int(amfi_code)] = rolling_sharpe.iloc[-1] if len(rolling_sharpe.dropna()) else np.nan
+    risk_var_rows.append({
+        "amfi_code": int(amfi_code),
+        "var_95_pct": var_95,
+        "cvar_95_pct": cvar_95,
+        "var_99_pct": var_99,
+        "cvar_99_pct": cvar_99,
+        "rolling_sharpe_90d": rolling_sharpe.iloc[-1] if len(rolling_sharpe.dropna()) else np.nan,
+    })
+risk_var_df = pd.DataFrame(risk_var_rows)
+
+fund_risk_profile = scorecard.merge(risk_var_df, on="amfi_code", how="left")
+fund_risk_profile.to_csv(ROOT / "fund_risk_profile.csv", index=False)
+
+# Sector concentration and portfolio holdings analytics
+holdings_path = ROOT / "data/raw/09_portfolio_holdings.csv"
+holdings = pd.read_csv(holdings_path)
+holdings["weight_pct"] = pd.to_numeric(holdings["weight_pct"], errors="coerce").fillna(0)
+
+sector_stats = (
+    holdings.groupby(["amfi_code", "sector"])["weight_pct"].sum().reset_index()
+)
+def sector_concentration_metrics(group):
+    weights = group["weight_pct"].values
+    hhi = np.sum((weights / 100) ** 2)
+    top_sector = group.loc[group["weight_pct"].idxmax(), "sector"]
+    top_sector_share = group["weight_pct"].max()
+    top3_share = group["weight_pct"].nlargest(3).sum()
+    return pd.Series({
+        "sector_hhi": hhi,
+        "top_sector": top_sector,
+        "top_sector_share_pct": top_sector_share,
+        "top_3_sector_share_pct": top3_share,
+        "number_of_sectors": len(group),
+    })
+
+sector_concentration = sector_stats.groupby("amfi_code").apply(sector_concentration_metrics).reset_index()
+sector_concentration = sector_concentration.merge(perf[["amfi_code", "scheme_name", "fund_house", "category", "plan"]], on="amfi_code", how="left")
+sector_concentration.to_csv(ROOT / "sector_concentration.csv", index=False)
+
+sector_plot = sector_concentration.sort_values("sector_hhi", ascending=False).head(10)
+fig, ax = plt.subplots(figsize=(12, 7))
+ax.barh(sector_plot["scheme_name"].astype(str), sector_plot["sector_hhi"], color="#3f51b5")
+ax.set_xlabel("Herfindahl-Hirschman Index (HHI)")
+ax.set_title("Top 10 Funds by Sector Concentration")
+ax.invert_yaxis()
+fig.tight_layout()
+fig.savefig(ROOT / "sector_concentration.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+# SIP cohort and continuity analysis
+transactions_path = ROOT / "data/processed/investor_transactions_clean.csv"
+transactions = pd.read_csv(transactions_path)
+transactions["transaction_date"] = pd.to_datetime(transactions["transaction_date"], errors="coerce")
+transactions = transactions.dropna(subset=["transaction_date"])
+transactions["month"] = transactions["transaction_date"].dt.to_period("M").dt.to_timestamp()
+
+sip_transactions = transactions[transactions["transaction_type"] == "SIP"].copy()
+if not sip_transactions.empty:
+    sip_transactions["first_month"] = sip_transactions.groupby("investor_id")["month"].transform("min")
+    cohort_counts = (
+        sip_transactions.groupby(["first_month", "month"])["investor_id"]
+        .nunique()
+        .reset_index(name="active_investors")
+    )
+    cohort_sizes = (
+        sip_transactions.groupby("first_month")["investor_id"]
+        .nunique()
+        .reset_index(name="cohort_size")
+    )
+    cohort_retention = cohort_counts.merge(cohort_sizes, on="first_month", how="left")
+    cohort_retention["months_since_cohort"] = (
+        (cohort_retention["month"].dt.year - cohort_retention["first_month"].dt.year) * 12
+        + (cohort_retention["month"].dt.month - cohort_retention["first_month"].dt.month)
+    )
+    cohort_retention["retention_rate"] = (
+        cohort_retention["active_investors"] / cohort_retention["cohort_size"]
+    )
+    cohort_retention.to_csv(ROOT / "sip_cohort_retention.csv", index=False)
+
+    cohort_plot_data = cohort_retention[cohort_retention["first_month"] >= (cohort_retention["first_month"].max() - pd.DateOffset(months=12))]
+    cohort_pivot = cohort_plot_data.pivot(index="months_since_cohort", columns="first_month", values="retention_rate")
+    fig, ax = plt.subplots(figsize=(14, 8))
+    cohort_pivot.plot(ax=ax, marker="o")
+    ax.set_title("SIP Cohort Retention (Recent 12 Cohorts)")
+    ax.set_xlabel("Months Since First SIP")
+    ax.set_ylabel("Retention Rate")
+    ax.legend(title="Cohort Start Month", bbox_to_anchor=(1.05, 1), loc="upper left")
+    fig.tight_layout()
+    fig.savefig(ROOT / "sip_cohort_retention.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    sip_monthly = sip_transactions[["investor_id", "month"]].drop_duplicates()
+    participation = (
+        sip_monthly.assign(value=1)
+        .pivot(index="investor_id", columns="month", values="value")
+        .fillna(0)
+    )
+    sorted_months = sorted(participation.columns)
+    participation = participation[sorted_months]
+    continuity_3m = participation.T.rolling(window=3).sum().T == 3
+    continuity_6m = participation.T.rolling(window=6).sum().T == 6
+    monthly_active = participation.sum(axis=0)
+    continuity_summary = pd.DataFrame({
+        "month": monthly_active.index,
+        "active_investors": monthly_active.values,
+        "continuity_3m_rate": (continuity_3m.sum(axis=0) / monthly_active).fillna(0).values,
+        "continuity_6m_rate": (continuity_6m.sum(axis=0) / monthly_active).fillna(0).values,
+    })
+    continuity_summary["month"] = pd.to_datetime(continuity_summary["month"])
+    continuity_summary.to_csv(ROOT / "sip_continuity.csv", index=False)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(continuity_summary["month"], continuity_summary["continuity_3m_rate"], label="3-month continuity", marker="o")
+    ax.plot(continuity_summary["month"], continuity_summary["continuity_6m_rate"], label="6-month continuity", marker="o")
+    ax.set_title("SIP Investor Continuity")
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Continuity Rate")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0%}"))
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(ROOT / "sip_continuity.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+# Fund recommendation engine by risk appetite
+recommendations = []
+conservative = scorecard[
+    (scorecard["max_drawdown"] >= -0.20)
+    & (scorecard["sharpe_ratio"] >= 0.70)
+    & (scorecard["beta"] <= 1.05)
+].sort_values(["sharpe_ratio", "fund_score"], ascending=[False, False]).head(10)
+for _, row in conservative.iterrows():
+    recommendations.append({
+        "risk_profile": "Conservative",
+        "amfi_code": row["amfi_code"],
+        "scheme_name": row["scheme_name"],
+        "fund_house": row["fund_house"],
+        "category": row["category"],
+        "plan": row["plan"],
+        "fund_score": row["fund_score"],
+        "sharpe_ratio": row["sharpe_ratio"],
+        "max_drawdown": row["max_drawdown"],
+        "beta": row["beta"],
+        "alpha": row["alpha"],
+    })
+balanced = scorecard.sort_values("fund_score", ascending=False).head(10)
+for _, row in balanced.iterrows():
+    recommendations.append({
+        "risk_profile": "Balanced",
+        "amfi_code": row["amfi_code"],
+        "scheme_name": row["scheme_name"],
+        "fund_house": row["fund_house"],
+        "category": row["category"],
+        "plan": row["plan"],
+        "fund_score": row["fund_score"],
+        "sharpe_ratio": row["sharpe_ratio"],
+        "max_drawdown": row["max_drawdown"],
+        "beta": row["beta"],
+        "alpha": row["alpha"],
+    })
+aggressive = scorecard[
+    (scorecard["alpha"] >= 0)
+    & (scorecard["beta"] >= 0.90)
+].sort_values(["alpha", "cagr_3yr"], ascending=[False, False]).head(10)
+for _, row in aggressive.iterrows():
+    recommendations.append({
+        "risk_profile": "Aggressive",
+        "amfi_code": row["amfi_code"],
+        "scheme_name": row["scheme_name"],
+        "fund_house": row["fund_house"],
+        "category": row["category"],
+        "plan": row["plan"],
+        "fund_score": row["fund_score"],
+        "sharpe_ratio": row["sharpe_ratio"],
+        "max_drawdown": row["max_drawdown"],
+        "beta": row["beta"],
+        "alpha": row["alpha"],
+    })
+recommendations_df = pd.DataFrame(recommendations)
+recommendations_df.to_csv(ROOT / "fund_recommendations.csv", index=False)
+
 # Save outputs
 scorecard.to_csv(ROOT / "fund_scorecard.csv", index=False)
 alpha_beta.to_csv(ROOT / "alpha_beta.csv", index=False)
@@ -193,6 +399,9 @@ plt.close(fig)
 print("Daily return summary rows:", len(summary))
 print("Scorecard rows:", len(scorecard))
 print("Alpha-beta rows:", len(alpha_beta))
+print("Fund risk profile rows:", len(fund_risk_profile))
+print("Sector concentration rows:", len(sector_concentration))
+print("Fund recommendation rows:", len(recommendations_df))
 print("Top 5 funds:")
 print(scorecard[["scheme_name", "fund_score"]].head().to_string(index=False))
 print("Benchmark chart saved to:", ROOT / "benchmark_comparison.png")

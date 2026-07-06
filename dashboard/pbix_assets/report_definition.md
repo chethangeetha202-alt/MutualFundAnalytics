@@ -12,6 +12,8 @@
 - Bubble size: AUM
 - Sortable fund scorecard table
 - NAV line vs benchmark
+- Risk metrics cards: Sharpe, alpha, beta, VaR/CVaR
+- Sector concentration bar chart
 - Slicers: fund house, category, plan
 
 ## Page 3 — Investor Analytics
@@ -27,6 +29,15 @@
 - Dual-axis chart: SIP inflow vs Nifty 50
 - Category inflow heatmap
 - Top 5 categories by net inflow FY25
+- SIP continuity line chart: 3-month and 6-month retention rates
+- Cohort retention table for monthly SIP cohorts
+
+## Page 5 — Risk & Recommendations
+
+- KPI cards: number of conservative / balanced / aggressive recommendations
+- Table: recommended funds by risk profile
+- Bar chart: top 10 funds by sector concentration (HHI)
+- Line chart: rolling 90-day Sharpe for selected funds
 
 ## Interactivity
 
