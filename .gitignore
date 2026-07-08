@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data and local databases
+*.db
+*.sqlite
+*.sqlite3
+*.csv~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Power BI export artifacts
+*.pbix.zip
